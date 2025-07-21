@@ -6,6 +6,9 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
+    "build": "npm install --production",
+    "serve": "node index.js",
+    "postbuild": "chmod +x bin/postbuild.sh && ./bin/postbuild.sh",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

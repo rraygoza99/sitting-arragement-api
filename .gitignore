@@ -4,6 +4,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# AWS Amplify
+.amplify-hosting
+
 # Environment variables
 .env
 .env.local
