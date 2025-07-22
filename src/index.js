@@ -1,16 +1,13 @@
-import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import morgan from 'morgan';
-import { MongoClient, ServerApiVersion, MongoClientOptions } from 'mongodb';
-import multer from 'multer';
-const { configureEnvironment } = require('../scripts/dotenv');
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const morgan = require('morgan');
+const { MongoClient, ServerApiVersion } = require('mongodb');
+const multer = require('multer');
+require('dotenv').config();
 
-// Configure environment variables for AWS Amplify compatibility
-const envConfig = configureEnvironment();
-
-const app: express.Application = express();
-const PORT = envConfig.PORT;
+const app = express();
+const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(helmet()); // Security headers
@@ -22,7 +19,7 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' })); // Parse URL-enc
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-const mongoOptions: MongoClientOptions = {
+const mongoOptions = {
     serverApi: {
         version: ServerApiVersion.v1,
         strict: true,
@@ -30,28 +27,27 @@ const mongoOptions: MongoClientOptions = {
     }
 };
 
-const client = new MongoClient(envConfig.MONGODB_URI as string, mongoOptions);
+const client = new MongoClient(process.env.MONGODB_URI, mongoOptions);
 
-const connectDB = async (): Promise<void> => {
+const connectDB = async () => {
   try {
     await client.connect();
     console.log(`MongoDB Connected: ${client.db().databaseName}`);
   } catch (error) {
-    console.error('Database connection error:', (error as Error).message);
-    // Don't exit in serverless environment
+    console.error('Database connection error:', error.message);
     throw error;
   }
 };
 
 // Add health check endpoint
-app.get('/health', (req: express.Request, res: express.Response) => {
+app.get('/health', (req, res) => {
     res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-app.get('/weddings', async (req: express.Request, res: express.Response) => {
+app.get('/weddings', async (req, res) => {
     try {
         // Check if MONGODB_URI exists
-        if (!envConfig.MONGODB_URI) {
+        if (!process.env.MONGODB_URI) {
             return res.status(500).json({ 
                 success: false, 
                 message: 'Database configuration error: MONGODB_URI not found' 
@@ -67,21 +63,17 @@ app.get('/weddings', async (req: express.Request, res: express.Response) => {
         res.status(500).json({ 
             success: false, 
             message: 'Error fetching weddings', 
-            error: (error as Error).message 
+            error: error.message 
         });
-    } finally {
-        // Don't close connection in serverless - let it persist
     }
 });
 
-connectDB();
-
-app.post('/api/upload', upload.single('jsonFile'), async (req: express.Request, res: express.Response) => {
+app.post('/api/upload', upload.single('jsonFile'), async (req, res) => {
     if(!req.file) {
         return res.status(400).json({ success: false, message: 'No file uploaded' });
     }
     try{
-        if (!envConfig.MONGODB_URI) {
+        if (!process.env.MONGODB_URI) {
             return res.status(500).json({ 
                 success: false, 
                 message: 'Database configuration error: MONGODB_URI not found' 
@@ -107,15 +99,14 @@ app.post('/api/upload', upload.single('jsonFile'), async (req: express.Request, 
         res.status(500).json({ 
             success: false, 
             message: 'Error uploading data', 
-            error: (error as Error).message 
+            error: error.message 
         });
     }
-    // Don't close connection in serverless environment
 });
 
-app.get('/wedding-names', async (req: express.Request, res: express.Response) => {
+app.get('/wedding-names', async (req, res) => {
     try {
-        if (!envConfig.MONGODB_URI) {
+        if (!process.env.MONGODB_URI) {
             return res.status(500).json({ 
                 success: false, 
                 message: 'Database configuration error: MONGODB_URI not found' 
@@ -133,12 +124,12 @@ app.get('/wedding-names', async (req: express.Request, res: express.Response) =>
         res.status(500).json({ 
             success: false, 
             message: 'Error fetching wedding names', 
-            error: (error as Error).message 
+            error: error.message 
         });
     }
 });
 
-// Initialize database connection but don't exit on failure in serverless
+// Initialize database connection
 connectDB().catch(error => {
     console.error('Initial database connection failed:', error);
 });
@@ -148,4 +139,4 @@ app.listen(PORT, () => {
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });
 
-export default app;
+module.exports = app;

@@ -2,16 +2,11 @@
   "compilerOptions": {
     "target": "ES2020",
     "module": "commonjs",
-    "outDir": "./dist",
-    "strict": true,
-    "lib": ["ES2020"],
     "allowJs": true,
     "checkJs": false,
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "baseUrl": ".",
     "paths": {
@@ -23,8 +18,6 @@
     "**/*.json"
   ],
   "exclude": [
-    "node_modules",
-    "dist",
-    "build"
+    "node_modules"
   ]
 }
