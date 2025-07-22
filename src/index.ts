@@ -4,12 +4,13 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import { MongoClient, ServerApiVersion, MongoClientOptions } from 'mongodb';
 import multer from 'multer';
-import dotenv from 'dotenv';
+const { configureEnvironment } = require('../scripts/dotenv');
 
-dotenv.config();
+// Configure environment variables for AWS Amplify compatibility
+const envConfig = configureEnvironment();
 
 const app: express.Application = express();
-const PORT = process.env.PORT || 3000;
+const PORT = envConfig.PORT;
 
 // Middleware
 app.use(helmet()); // Security headers
@@ -29,7 +30,7 @@ const mongoOptions: MongoClientOptions = {
     }
 };
 
-const client = new MongoClient(process.env.MONGODB_URI as string, mongoOptions);
+const client = new MongoClient(envConfig.MONGODB_URI as string, mongoOptions);
 
 const connectDB = async (): Promise<void> => {
   try {
@@ -50,7 +51,7 @@ app.get('/health', (req: express.Request, res: express.Response) => {
 app.get('/weddings', async (req: express.Request, res: express.Response) => {
     try {
         // Check if MONGODB_URI exists
-        if (!process.env.MONGODB_URI) {
+        if (!envConfig.MONGODB_URI) {
             return res.status(500).json({ 
                 success: false, 
                 message: 'Database configuration error: MONGODB_URI not found' 
@@ -80,7 +81,7 @@ app.post('/api/upload', upload.single('jsonFile'), async (req: express.Request, 
         return res.status(400).json({ success: false, message: 'No file uploaded' });
     }
     try{
-        if (!process.env.MONGODB_URI) {
+        if (!envConfig.MONGODB_URI) {
             return res.status(500).json({ 
                 success: false, 
                 message: 'Database configuration error: MONGODB_URI not found' 
@@ -114,7 +115,7 @@ app.post('/api/upload', upload.single('jsonFile'), async (req: express.Request, 
 
 app.get('/wedding-names', async (req: express.Request, res: express.Response) => {
     try {
-        if (!process.env.MONGODB_URI) {
+        if (!envConfig.MONGODB_URI) {
             return res.status(500).json({ 
                 success: false, 
                 message: 'Database configuration error: MONGODB_URI not found' 

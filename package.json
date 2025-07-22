@@ -4,8 +4,9 @@
   "description": "",
   "main": "dist/index.js",
   "scripts": {
-    "start": "ts-node src/index.ts",
-    "build": "tsc",
+    "start": "node dist/index.js",
+    "build": "tsc && npm run postbuild",
+    "build:amplify": "tsc",
     "serve": "node dist/index.js",
     "postbuild:win": "bin\\postbuild.bat",
     "postbuild": "chmod +x bin/postbuild.sh && ./bin/postbuild.sh",
