@@ -37,19 +37,39 @@ const connectDB = async (): Promise<void> => {
     console.log(`MongoDB Connected: ${client.db().databaseName}`);
   } catch (error) {
     console.error('Database connection error:', (error as Error).message);
-    process.exit(1);
+    // Don't exit in serverless environment
+    throw error;
   }
 };
 
+// Add health check endpoint
+app.get('/health', (req: express.Request, res: express.Response) => {
+    res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
 app.get('/weddings', async (req: express.Request, res: express.Response) => {
     try {
+        // Check if MONGODB_URI exists
+        if (!process.env.MONGODB_URI) {
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Database configuration error: MONGODB_URI not found' 
+            });
+        }
+
         await client.connect();
         const db = client.db('sitting-arrangement');
         const weddings = await db.collection('sittingData').find({}).toArray();
         res.status(200).json(weddings);
     } catch (error) {
         console.error('Error fetching weddings:', error);
-        res.status(500).json({ success: false, message: 'Error fetching weddings', error: (error as Error).message });
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error fetching weddings', 
+            error: (error as Error).message 
+        });
+    } finally {
+        // Don't close connection in serverless - let it persist
     }
 });
 
@@ -60,6 +80,13 @@ app.post('/api/upload', upload.single('jsonFile'), async (req: express.Request, 
         return res.status(400).json({ success: false, message: 'No file uploaded' });
     }
     try{
+        if (!process.env.MONGODB_URI) {
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Database configuration error: MONGODB_URI not found' 
+            });
+        }
+
         const jsonString = req.file.buffer.toString('utf-8');
         const jsonData = JSON.parse(jsonString);
 
@@ -76,14 +103,24 @@ app.post('/api/upload', upload.single('jsonFile'), async (req: express.Request, 
         });
     } catch (error) {
         console.error('Error uploading data:', error);
-        res.status(500).json({ success: false, message: 'Error uploading data', error: (error as Error).message });
-    } finally {
-        await client.close();
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error uploading data', 
+            error: (error as Error).message 
+        });
     }
+    // Don't close connection in serverless environment
 });
 
 app.get('/wedding-names', async (req: express.Request, res: express.Response) => {
     try {
+        if (!process.env.MONGODB_URI) {
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Database configuration error: MONGODB_URI not found' 
+            });
+        }
+
         await client.connect();
         const db = client.db('sitting-arrangement');
         const weddingNames = await db.collection('sittingData')
@@ -92,8 +129,17 @@ app.get('/wedding-names', async (req: express.Request, res: express.Response) =>
         res.status(200).json(weddingNames);
     } catch (error) {
         console.error('Error fetching wedding names:', error);
-        res.status(500).json({ success: false, message: 'Error fetching wedding names', error: (error as Error).message });
+        res.status(500).json({ 
+            success: false, 
+            message: 'Error fetching wedding names', 
+            error: (error as Error).message 
+        });
     }
+});
+
+// Initialize database connection but don't exit on failure in serverless
+connectDB().catch(error => {
+    console.error('Initial database connection failed:', error);
 });
 
 app.listen(PORT, () => {
