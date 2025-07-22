@@ -5,10 +5,11 @@
   "main": "dist/index.js",
   "scripts": {
     "start": "ts-node src/index.ts",
-    "dev": "nodemon src/index.ts",
     "build": "tsc",
     "serve": "node dist/index.js",
-    
+    "postbuild": "bin\\postbuild.bat",
+    "postbuild:linux": "chmod +x bin/postbuild.sh && ./bin/postbuild.sh",
+    "dev": "nodemon src/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
